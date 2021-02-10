@@ -1,8 +1,16 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+ext {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility1 = sourceCompatibility
+    targetCompatibility1 = targetCompatibility
+    sourceCompatibility2 = sourceCompatibility1
+    targetCompatibility2 = targetCompatibility1
+}// Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
         google()
         jcenter()
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
         classpath "com.android.tools.build:gradle:4.1.2"
@@ -16,6 +24,7 @@ allprojects {
     repositories {
         google()
         jcenter()
+        maven { url 'https://jitpack.io' }
     }
 }
 

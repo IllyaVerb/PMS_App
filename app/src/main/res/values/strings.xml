@@ -2,5 +2,5 @@
     <string name="app_name">PMS_App</string>
     <string name="title_home">Home</string>
     <string name="title_drawing">Drawing</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_books">Books</string>
 </resources>

@@ -41,8 +41,6 @@ public class DrawingFragment extends Fragment {
     private static final float graph_border_a = -5.2f;
     private static final float graph_border_b = 5.2f;
     private static final double precision = 0.05;
-    //private int chart_width = 1000;
-    private int chart_height = 800;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -62,7 +60,7 @@ public class DrawingFragment extends Fragment {
 
         setGraphicsOnChart(line, chartData_main, chartData_X, chartData_Y);
 
-        Switch switchUpdate = root.findViewById(R.id.switch1);
+        @SuppressLint("UseSwitchCompatOrMaterialCode") Switch switchUpdate = root.findViewById(R.id.switch1);
 
         line_lay.post(() -> {
             if (switchUpdate.isChecked()) {
@@ -121,13 +119,6 @@ public class DrawingFragment extends Fragment {
         typeAmountMap.add(10); //"Red"
         typeAmountMap.add(5); //"Violet"
 
-        Map<Integer, String> sizeToColor = new HashMap<>();
-        sizeToColor.put(15, "#DDC000");
-        sizeToColor.put(25, "#703107");
-        sizeToColor.put(45, "#434343");
-        sizeToColor.put(10, "#CC0000");
-        sizeToColor.put(5, "#6600AE");
-
         ArrayList<Integer> colors = new ArrayList<>();
         colors.add(Color.parseColor("#DDC000"));
         colors.add(Color.parseColor("#703107"));
@@ -147,13 +138,6 @@ public class DrawingFragment extends Fragment {
         PieData pieData = new PieData(pieDataSet);
         pieData.setValueTextSize(0f);
         pieData.setValueTextColor(Color.WHITE);
-        pieData.setValueFormatter(new ValueFormatter() {
-            @SuppressLint("DefaultLocale")
-            @Override
-            public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
-                return String.format("%d %%", (int)value);
-            }
-        });
 
         pieChart.setData(pieData);
         pieChart.invalidate();
@@ -192,7 +176,6 @@ public class DrawingFragment extends Fragment {
                                     List<Entry> chartData_main,
                                     List<Entry> chartData_X,
                                     List<Entry> chartData_Y){
-        //line.setMinimumHeight(1000);
         line.getDescription().setEnabled(false);
 
         line.getLegend().setCustom(new ArrayList<>());

@@ -23,12 +23,9 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
-import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
-import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -62,20 +59,7 @@ public class DrawingFragment extends Fragment {
 
         @SuppressLint("UseSwitchCompatOrMaterialCode") Switch switchUpdate = root.findViewById(R.id.switch1);
 
-        line_lay.post(() -> {
-            if (switchUpdate.isChecked()) {
-                line.setVisibility(View.GONE);
-                pieChart.setVisibility(View.VISIBLE);
-            }
-            else {
-                pieChart.setVisibility(View.GONE);
-                line.setVisibility(View.VISIBLE);
-            }
-            int width = line_lay.getWidth();
-            int height = line_lay.getHeight();
-            line_lay.setLayoutParams(new
-                    LinearLayout.LayoutParams(Math.min(width, height), Math.min(width, height)));
-        });
+        line_lay.post(() -> makeLaySizeCorrect(line_lay, switchUpdate, line, pieChart));
 
         switchUpdate.setOnClickListener(v -> {
             if (switchUpdate.isChecked()) {
@@ -88,9 +72,29 @@ public class DrawingFragment extends Fragment {
             }
         });
 
+        //root.findViewById(R.id.nav_view)
+        //        .setOnClickListener(v -> makeLaySizeCorrect(line_lay, switchUpdate, line, pieChart));
+
         updateGraphic(root, line, chartData_main, chartData_X, chartData_Y);
         updateDiagram(root, pieChart);
         return root;
+    }
+
+    private void makeLaySizeCorrect(LinearLayout line_lay,
+                                    @SuppressLint("UseSwitchCompatOrMaterialCode") Switch switchUpdate,
+                                    LineChart line, PieChart pieChart){
+        if (switchUpdate.isChecked()) {
+            line.setVisibility(View.GONE);
+            pieChart.setVisibility(View.VISIBLE);
+        }
+        else {
+            pieChart.setVisibility(View.GONE);
+            line.setVisibility(View.VISIBLE);
+        }
+            int width = line_lay.getWidth();
+            int height = line_lay.getHeight();
+            line_lay.setLayoutParams(new
+                    LinearLayout.LayoutParams(Math.min(width, height), Math.min(width, height)));
     }
 
     private void initPieChart(PieChart pieChart){

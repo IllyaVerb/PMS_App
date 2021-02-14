@@ -1,8 +1,10 @@
 package ua.kpi.comsys.io8205.pms_app.ui.drawing;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,17 +41,30 @@ public class DrawingFragment extends Fragment {
     private static final float graph_border_b = 5.2f;
     private static final double precision = 0.05;
 
+    private DisplayMetrics displayMetrics = new DisplayMetrics();
+
+    private int width = displayMetrics.widthPixels;
+    private int height = displayMetrics.heightPixels;
+
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
+    private Switch switchUpdate;
+    private LinearLayout line_lay;
+    private LineChart line;
+    private PieChart pieChart;
+    private View root;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_drawing, container, false);
+        root = inflater.inflate(R.layout.fragment_drawing, container, false);
+        ((Activity) root.getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
-        LinearLayout line_lay = root.findViewById(R.id.chart_lay);
+        /*line_lay = root.findViewById(R.id.chart_lay);
         line_lay.setLayoutParams(new
                 LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+*/
 
-
-        LineChart line = root.findViewById(R.id.chart1);
-        PieChart pieChart = root.findViewById(R.id.chart2);
+        line = root.findViewById(R.id.chart1);
+        pieChart = root.findViewById(R.id.chart2);
 
         List<Entry> chartData_main = new ArrayList<>();
         List<Entry> chartData_X = new ArrayList<>();
@@ -57,9 +72,15 @@ public class DrawingFragment extends Fragment {
 
         setGraphicsOnChart(line, chartData_main, chartData_X, chartData_Y);
 
-        @SuppressLint("UseSwitchCompatOrMaterialCode") Switch switchUpdate = root.findViewById(R.id.switch1);
+        switchUpdate = root.findViewById(R.id.switch1);
 
-        line_lay.post(() -> makeLaySizeCorrect(line_lay, switchUpdate, line, pieChart));
+        /*line_lay.post(() -> {
+            int width = line_lay.getWidth();
+            int height = line_lay.getHeight();
+            System.out.println(width + " " + height);
+            line_lay.setLayoutParams(new
+                    LinearLayout.LayoutParams(Math.min(width, height), Math.min(width, height)));
+        });*/
 
         switchUpdate.setOnClickListener(v -> {
             if (switchUpdate.isChecked()) {
@@ -77,12 +98,14 @@ public class DrawingFragment extends Fragment {
 
         updateGraphic(root, line, chartData_main, chartData_X, chartData_Y);
         updateDiagram(root, pieChart);
+
         return root;
     }
 
-    private void makeLaySizeCorrect(LinearLayout line_lay,
-                                    @SuppressLint("UseSwitchCompatOrMaterialCode") Switch switchUpdate,
-                                    LineChart line, PieChart pieChart){
+    /*@Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
         if (switchUpdate.isChecked()) {
             line.setVisibility(View.GONE);
             pieChart.setVisibility(View.VISIBLE);
@@ -91,11 +114,15 @@ public class DrawingFragment extends Fragment {
             pieChart.setVisibility(View.GONE);
             line.setVisibility(View.VISIBLE);
         }
-            int width = line_lay.getWidth();
-            int height = line_lay.getHeight();
+
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            line_lay.setLayoutParams(new
+                    LinearLayout.LayoutParams((int)(Math.min(width, height)*0.65), (int)(Math.min(width, height)*0.65)));
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
             line_lay.setLayoutParams(new
                     LinearLayout.LayoutParams(Math.min(width, height), Math.min(width, height)));
-    }
+        }
+    }*/
 
     private void initPieChart(PieChart pieChart){
         pieChart.getDescription().setEnabled(false);

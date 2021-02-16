@@ -22,4 +22,10 @@
         android:name="ua.kpi.comsys.io8205.pms_app.ui.books.BooksFragment"
         android:label="@string/title_books"
         tools:layout="@layout/fragment_books" />
+
+    <fragment
+        android:id="@+id/navigation_gallery"
+        android:name="ua.kpi.comsys.io8205.pms_app.ui.gallery.GalleryFragment"
+        android:label="@string/title_gallery"
+        tools:layout="@layout/fragment_gallery" />
 </navigation>

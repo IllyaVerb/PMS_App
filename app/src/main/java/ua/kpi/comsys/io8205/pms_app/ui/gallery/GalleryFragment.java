@@ -1,11 +1,15 @@
 package ua.kpi.comsys.io8205.pms_app.ui.gallery;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,14 +37,18 @@ import org.json.simple.parser.ParseException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import ua.kpi.comsys.io8205.pms_app.R;
-import ua.kpi.comsys.io8205.pms_app.ui.books.BooksFragment;
+import ua.kpi.comsys.io8205.pms_app.database.App;
+import ua.kpi.comsys.io8205.pms_app.database.AppDatabase;
+import ua.kpi.comsys.io8205.pms_app.database.GalleryEntity;
 
 public class GalleryFragment extends Fragment {
 
@@ -53,6 +61,7 @@ public class GalleryFragment extends Fragment {
     // list from: 1-ConstraintLayout, 2-ConstraintSet
     private static ArrayList<ArrayList<Object>> placeholderList;
     private static Chip chipInst;
+    private static AppDatabase database;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -88,6 +97,8 @@ public class GalleryFragment extends Fragment {
             }
         });
 
+        database = App.getInstance().getDatabase();
+
         AsyncLoadGallery aTask = new AsyncLoadGallery();
         aTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
                     "19193969-87191e5db266905fe8936d565",
@@ -101,6 +112,7 @@ public class GalleryFragment extends Fragment {
         if (images != null) {
             for (String img :
                     images) {
+                new AsyncLoadBitmapToDB().execute(img);
                 addImage(false, null, img);
             }
         }
@@ -115,7 +127,7 @@ public class GalleryFragment extends Fragment {
 
         if(requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK){
             Uri imageUri = data.getData();
-            addImage(true, imageUri, "");
+            addImage(true, imageUri, null);
         }
     }
 
@@ -138,7 +150,8 @@ public class GalleryFragment extends Fragment {
         else {
             //newImage.setVisibility(View.INVISIBLE);
             loadingImageBar.setVisibility(View.VISIBLE);
-            new BooksFragment.DownloadImageTask(newImage, loadingImageBar, root.getContext()).execute(imageUrl);
+            new AsyncLoadImageFromDB(newImage, loadingImageBar).execute(imageUrl);
+            //new BooksFragment.DownloadImageTask(newImage, loadingImageBar, root.getContext()).execute(galleryEntity.imageUrl);
         }
 
         newImage.setBackgroundResource(R.color.img_back);
@@ -385,27 +398,74 @@ public class GalleryFragment extends Fragment {
         return list.get(list.size()-1).get(index);
     }
 
-    private static class AsyncLoadGallery extends AsyncTask<String, Void, ArrayList<String>> {
-        private String getRequest(String url){
-            StringBuilder result = new StringBuilder();
+    private static class AsyncLoadImageFromDB extends AsyncTask<String, Void, Void> {
+        @SuppressLint("StaticFieldLeak")
+        ImageView imageView;
+        @SuppressLint("StaticFieldLeak")
+        ProgressBar progressBar;
+        Bitmap bitmap;
+
+        public AsyncLoadImageFromDB(ImageView imageView, ProgressBar progressBar) {
+            this.imageView = imageView;
+            this.progressBar = progressBar;
+        }
+
+        @Override
+        protected Void doInBackground(String... urls) {
             try {
-                URL getReq = new URL(url);
-                URLConnection bookConnection = getReq.openConnection();
-                BufferedReader in = new BufferedReader(new InputStreamReader(bookConnection.getInputStream()));
-                String inputLine;
-
-                while ((inputLine = in.readLine()) != null)
-                    result.append(inputLine).append("\n");
-
-                in.close();
-
-            } catch (MalformedURLException e) {
-                System.err.println(String.format("Incorrect URL <%s>!", url));
-                e.printStackTrace();
+                InputStream in = new java.net.URL(urls[0]).openStream();
+                bitmap = BitmapFactory.decodeStream(in);
             } catch (IOException e) {
-                e.printStackTrace();
+                bitmap = database.galleryDao().getByUrl(urls[0]).getBitmapImage();
+                //e.printStackTrace();
             }
+            return null;
+        }
 
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            imageView.setImageBitmap(bitmap);
+            progressBar.setVisibility(View.GONE);
+            imageView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private static class AsyncLoadBitmapToDB extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... urls) {
+            Bitmap mIcon11;
+            try {
+                InputStream in = new java.net.URL(urls[0]).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+                if (database.galleryDao().getByUrl(urls[0]) != null &&
+                        database.galleryDao().getByUrl(urls[0]).imageData != null)
+                    mIcon11 = database.galleryDao().getByUrl(urls[0]).getBitmapImage();
+                else
+                    mIcon11 = BitmapFactory.decodeResource(root.getContext().getResources(),
+                            R.drawable.no_image);
+            }
+            if (mIcon11 != null)
+                database.galleryDao().setImageBitmapByUrl(urls[0], GalleryEntity.getBitmapAsByteArray(mIcon11));
+            return null;
+        }
+    }
+
+    private static class AsyncLoadGallery extends AsyncTask<String, Void, ArrayList<String>> {
+        private String getRequest(String url) throws IOException{
+            StringBuilder result = new StringBuilder();
+            URL getReq = new URL(url);
+            URLConnection bookConnection = getReq.openConnection();
+            BufferedReader in = new BufferedReader(new InputStreamReader(bookConnection.getInputStream()));
+            String inputLine;
+
+            while ((inputLine = in.readLine()) != null)
+                result.append(inputLine).append("\n");
+
+            in.close();
             return result.toString();
         }
 
@@ -417,7 +477,13 @@ public class GalleryFragment extends Fragment {
             JSONArray images = (JSONArray) jsonObject.get("hits");
             for (Object img : images) {
                 JSONObject tmp = (JSONObject) img;
-                result.add((String) tmp.get("webformatURL"));
+                String url = (String) tmp.get("webformatURL");
+
+                GalleryEntity galleryEntity = new GalleryEntity(
+                        (Long) tmp.get("id"), url, null);
+                database.galleryDao().insert(galleryEntity);
+
+                result.add(url);
             }
 
             return result;
@@ -429,6 +495,14 @@ public class GalleryFragment extends Fragment {
                                                     api, req, count);
             try {
                 return parseImages(getRequest(jsonResponse));
+            } catch (UnknownHostException e) {
+                System.err.println(String.format("Request timeout!", jsonResponse));
+                return (ArrayList<String>) database.galleryDao().getAllUrls();
+            } catch (MalformedURLException e) {
+                System.err.println(String.format("Incorrect URL <%s>!", jsonResponse));
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             } catch (ParseException e) {
                 System.err.println("Incorrect content of JSON file!");
                 e.printStackTrace();
@@ -446,6 +520,8 @@ public class GalleryFragment extends Fragment {
         @Override
         protected void onPostExecute(ArrayList<String> images) {
             super.onPostExecute(images);
+            if (images == null || images.size() == 0)
+                Toast.makeText(root.getContext(), "Cannot load data!", Toast.LENGTH_SHORT).show();
             GalleryFragment.loadImages(images);
         }
     }

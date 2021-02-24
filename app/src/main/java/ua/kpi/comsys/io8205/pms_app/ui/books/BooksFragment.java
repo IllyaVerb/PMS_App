@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -48,12 +49,17 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import ua.kpi.comsys.io8205.pms_app.R;
+import ua.kpi.comsys.io8205.pms_app.database.App;
+import ua.kpi.comsys.io8205.pms_app.database.AppDatabase;
+import ua.kpi.comsys.io8205.pms_app.database.BooksTable;
+import ua.kpi.comsys.io8205.pms_app.database.SearchTable;
 
 public class BooksFragment extends Fragment {
 
@@ -64,6 +70,7 @@ public class BooksFragment extends Fragment {
     private static ProgressBar loadingBar;
     private static TextView noItemsText;
     private static Set<ConstraintLayout> removeSet;
+    private static AppDatabase database;
 
     private static int backgroundResource;
 
@@ -164,6 +171,8 @@ public class BooksFragment extends Fragment {
 
         changeLaySizes();
 
+        database = App.getInstance().getDatabase();
+
         return root;
     }
 
@@ -174,6 +183,7 @@ public class BooksFragment extends Fragment {
                 noItems.setVisibility(View.GONE);
                 for (Book book :
                         books) {
+                    //new AsyncLoadBookToDB().execute(book);
                     addNewBook(book);
                 }
                 for (ConstraintLayout constraintLayout : removeSet) {
@@ -184,8 +194,6 @@ public class BooksFragment extends Fragment {
                 noItems.setVisibility(View.VISIBLE);
             }
         }
-        else
-            Toast.makeText(root.getContext(), "Cannot load data!", Toast.LENGTH_LONG).show();
         loadingBar.setVisibility(View.GONE);
         noItemsText.setVisibility(View.VISIBLE);
     }
@@ -265,10 +273,18 @@ public class BooksFragment extends Fragment {
         ConstraintLayout.LayoutParams imgParams =
                 new ConstraintLayout.LayoutParams(300, 300);
         imageTmp.setImageResource(R.drawable.no_image);
-        if (book.getImagePath().length() != 0){
+        if (book.getImagePath() != null) {
+            if (book.getImagePath().length() != 0) {
+                imageTmp.setVisibility(View.INVISIBLE);
+                loadingImageBar.setVisibility(View.VISIBLE);
+                new DownloadImageTask(imageTmp, loadingImageBar, root.getContext()).execute(book.getImagePath());
+            }
+        }else {
             imageTmp.setVisibility(View.INVISIBLE);
             loadingImageBar.setVisibility(View.VISIBLE);
-            new DownloadImageTask(imageTmp, loadingImageBar, root.getContext()).execute(book.getImagePath());
+            imageTmp.setImageBitmap(book.getImage());
+            loadingImageBar.setVisibility(View.GONE);
+            imageTmp.setVisibility(View.VISIBLE);
         }
         bookLayTmp.addView(imageTmp, 0, imgParams);
 
@@ -277,9 +293,11 @@ public class BooksFragment extends Fragment {
         bookLayTmp.addView(textConstraint, 1);
 
         TextView textTitle = new TextView(root.getContext());
-        textTitle.setId(textTitle.hashCode());
-        textTitle.setPadding(0, 1, 5, 1);
         textTitle.setText(book.getTitle());
+        textTitle.setEllipsize(TextUtils.TruncateAt.END);
+        textTitle.setMaxLines(1);
+        textTitle.setPadding(0, 1, 5, 1);
+        textTitle.setId(textTitle.hashCode());
         ConstraintLayout.LayoutParams textTitleParams =
                 new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
                         ConstraintLayout.LayoutParams.WRAP_CONTENT);
@@ -287,6 +305,8 @@ public class BooksFragment extends Fragment {
 
         TextView textSubtitle = new TextView(root.getContext());
         textSubtitle.setText(book.getSubtitle());
+        textSubtitle.setEllipsize(TextUtils.TruncateAt.END);
+        textSubtitle.setMaxLines(4);
         textSubtitle.setPadding(0, 1, 5, 1);
         textSubtitle.setId(textSubtitle.hashCode());
         ConstraintLayout.LayoutParams textSubtitleParams =
@@ -373,27 +393,52 @@ public class BooksFragment extends Fragment {
         }
     }
 
-    private static class AsyncLoadBooks extends AsyncTask<String, Void, ArrayList<Book>> {
-        private String getRequest(String url){
-            StringBuilder result = new StringBuilder();
+    private static class AsyncLoadBookToDB extends AsyncTask<Book, Void, Void> {
+        @Override
+        protected Void doInBackground(Book... books) {
+            BooksTable booksTable = new BooksTable(Long.parseLong(books[0].getIsbn13()),
+                                                    books[0].getTitle(),
+                                                    books[0].getSubtitle(),
+                                                    books[0].getPrice(),
+                    "", "", 0, "", "", 0);
+            String urldisplay = books[0].getImagePath();
+            Bitmap mIcon11 = null;
             try {
-                URL getReq = new URL(url);
-                URLConnection bookConnection = getReq.openConnection();
-                BufferedReader in = new BufferedReader(new InputStreamReader(bookConnection.getInputStream()));
-                String inputLine;
-
-                while ((inputLine = in.readLine()) != null)
-                    result.append(inputLine).append("\n");
-
-                in.close();
-
-            } catch (MalformedURLException e) {
-                System.err.println(String.format("Incorrect URL <%s>!", url));
-                e.printStackTrace();
-            } catch (IOException e) {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
                 e.printStackTrace();
             }
+            if (mIcon11 != null) {
+                booksTable.setImage(mIcon11);
 
+                database.bookDao().insert(booksTable);
+                SearchTable search = database.searchTableDao().getLastSearch();
+                ArrayList<Long> booksIsbn = new ArrayList<>(search.searchedBooks);
+                booksIsbn.add(booksTable.getIsbn13());
+                search.searchedBooks = booksIsbn;
+
+                database.searchTableDao().update(search);
+            }
+            return null;
+        }
+    }
+
+    private static class AsyncLoadBooks extends AsyncTask<String, Void, ArrayList<Book>> {
+
+        private String getRequest(String url) throws IOException{
+            StringBuilder result = new StringBuilder();
+
+            URL getReq = new URL(url);
+            URLConnection bookConnection = getReq.openConnection();
+            BufferedReader in = new BufferedReader(new InputStreamReader(bookConnection.getInputStream()));
+            String inputLine;
+
+            while ((inputLine = in.readLine()) != null)
+                result.append(inputLine).append("\n");
+
+            in.close();
             return result.toString();
         }
 
@@ -417,12 +462,45 @@ public class BooksFragment extends Fragment {
             return result;
         }
 
+        private ArrayList<Book> offlineLoad(String query){
+            ArrayList<Book> newBooks = new ArrayList<>();
+            ArrayList<Long> isbns = database.searchTableDao().getLastByQuery(query).searchedBooks;
+            for (long isbn :
+                    isbns) {
+                newBooks.add(database.bookDao().getByIsbn13(isbn).makeBook());
+            }
+            return newBooks;
+        }
+
         @RequiresApi(api = Build.VERSION_CODES.M)
         private ArrayList<Book> search(String newText){
             String jsonResponse = String.format("https://api.itbook.store/1.0/search/\"%s\"", newText);
             try {
                 ArrayList<Book> books = parseBooks(getRequest(jsonResponse));
+
+                SearchTable newSearch = new SearchTable();
+                newSearch.searchQueue = newText;
+                newSearch.searchedBooks = new ArrayList<>();
+                database.searchTableDao().insert(newSearch);
+
+                for (Book book :
+                        books) {
+                    new AsyncLoadBookToDB().execute(book);
+                }
+
                 return books;
+            } catch (UnknownHostException e) {
+
+                System.err.println("Request timeout!");
+                if (database.searchTableDao().getLastByQuery(newText) != null) {
+                    return offlineLoad(newText);
+                }
+
+            } catch (MalformedURLException e) {
+                System.err.println(String.format("Incorrect URL <%s>!", jsonResponse));
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             } catch (ParseException e) {
                 System.err.println("Incorrect content of JSON file!");
                 e.printStackTrace();
@@ -433,13 +511,16 @@ public class BooksFragment extends Fragment {
         @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         protected ArrayList<Book> doInBackground(String... strings) {
-            return search(strings[0]);
+            String searchQueue = strings[0];
+            return search(searchQueue);
         }
 
         @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         protected void onPostExecute(ArrayList<Book> books) {
             super.onPostExecute(books);
+            if (books == null)
+                Toast.makeText(root.getContext(), "Cannot load data!", Toast.LENGTH_SHORT).show();
             BooksFragment.loadBooks(books);
         }
     }
@@ -476,7 +557,6 @@ public class BooksFragment extends Fragment {
                 bmImage.setImageBitmap(result);
             else {
                 bmImage.setBackgroundResource(R.drawable.no_image);
-                Toast.makeText(context, "Cannot load data!", Toast.LENGTH_LONG).show();
             }
             loadingBar.setVisibility(View.GONE);
             bmImage.setVisibility(View.VISIBLE);

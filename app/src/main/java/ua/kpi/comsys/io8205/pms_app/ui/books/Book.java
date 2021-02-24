@@ -1,5 +1,7 @@
 package ua.kpi.comsys.io8205.pms_app.ui.books;
 
+import android.graphics.Bitmap;
+
 public class Book {
 
     private final String title;
@@ -12,7 +14,16 @@ public class Book {
     private String rating;
     private String desc;
     private final String price;
-    private final String imagePath;
+    private String imagePath;
+    private Bitmap image;
+
+    public Book(String title, String subtitle, String isbn13, String price, Bitmap image){
+        this.title = title;
+        this.subtitle = subtitle;
+        this.isbn13 = isbn13;
+        this.price = price;
+        this.image = image;
+    }
 
     public Book(String title, String subtitle, String isbn13, String price, String imagePath){
         this.title = title;
@@ -20,6 +31,7 @@ public class Book {
         this.isbn13 = isbn13;
         this.price = price;
         this.imagePath = imagePath;
+        this.image = null;
     }
 
     public Book(String title, String subtitle, String price){
@@ -96,5 +108,9 @@ public class Book {
 
     public String getImagePath() {
         return imagePath;
+    }
+
+    public Bitmap getImage() {
+        return image;
     }
 }

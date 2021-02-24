@@ -8,7 +8,6 @@ import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.Switch;
 
 import androidx.annotation.NonNull;
@@ -41,27 +40,17 @@ public class DrawingFragment extends Fragment {
     private static final float graph_border_b = 5.2f;
     private static final double precision = 0.05;
 
-    private DisplayMetrics displayMetrics = new DisplayMetrics();
-
-    private int width = displayMetrics.widthPixels;
-    private int height = displayMetrics.heightPixels;
+    private final DisplayMetrics displayMetrics = new DisplayMetrics();
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     private Switch switchUpdate;
-    private LinearLayout line_lay;
     private LineChart line;
     private PieChart pieChart;
-    private View root;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        root = inflater.inflate(R.layout.fragment_drawing, container, false);
+        View root = inflater.inflate(R.layout.fragment_drawing, container, false);
         ((Activity) root.getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-
-        /*line_lay = root.findViewById(R.id.chart_lay);
-        line_lay.setLayoutParams(new
-                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-*/
 
         line = root.findViewById(R.id.chart1);
         pieChart = root.findViewById(R.id.chart2);
@@ -74,14 +63,6 @@ public class DrawingFragment extends Fragment {
 
         switchUpdate = root.findViewById(R.id.switch1);
 
-        /*line_lay.post(() -> {
-            int width = line_lay.getWidth();
-            int height = line_lay.getHeight();
-            System.out.println(width + " " + height);
-            line_lay.setLayoutParams(new
-                    LinearLayout.LayoutParams(Math.min(width, height), Math.min(width, height)));
-        });*/
-
         switchUpdate.setOnClickListener(v -> {
             if (switchUpdate.isChecked()) {
                 line.setVisibility(View.GONE);
@@ -93,36 +74,11 @@ public class DrawingFragment extends Fragment {
             }
         });
 
-        //root.findViewById(R.id.nav_view)
-        //        .setOnClickListener(v -> makeLaySizeCorrect(line_lay, switchUpdate, line, pieChart));
-
         updateGraphic(root, line, chartData_main, chartData_X, chartData_Y);
         updateDiagram(root, pieChart);
 
         return root;
     }
-
-    /*@Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        if (switchUpdate.isChecked()) {
-            line.setVisibility(View.GONE);
-            pieChart.setVisibility(View.VISIBLE);
-        }
-        else {
-            pieChart.setVisibility(View.GONE);
-            line.setVisibility(View.VISIBLE);
-        }
-
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            line_lay.setLayoutParams(new
-                    LinearLayout.LayoutParams((int)(Math.min(width, height)*0.65), (int)(Math.min(width, height)*0.65)));
-        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-            line_lay.setLayoutParams(new
-                    LinearLayout.LayoutParams(Math.min(width, height), Math.min(width, height)));
-        }
-    }*/
 
     private void initPieChart(PieChart pieChart){
         pieChart.getDescription().setEnabled(false);

@@ -62,6 +62,12 @@ public class CoordinateIV {
             throw new Exception();
         }
 
+        if ((dir == Direction.LATITUDE && Math.abs(getFloatSigned()) > (float) 90) ||
+                (dir == Direction.LONGITUDE && Math.abs(getFloatSigned()) > (float) 180)) {
+            System.err.println(String.format("The coordinate (%f) is not in bounds", getFloatSigned()));
+            throw new Exception();
+        }
+
     }
 
     @SuppressLint("DefaultLocale")
@@ -78,12 +84,16 @@ public class CoordinateIV {
         return String.format("%f° %s", Math.abs(getFloatSigned()), worldLetter);
     }
 
-    public CoordinateIV getMiddleCoordinate(CoordinateIV a, CoordinateIV b) throws Exception {
+    public static CoordinateIV getMiddleCoordinate(CoordinateIV a, CoordinateIV b) throws Exception {
         if (a.getCurrentDir() == b.getCurrentDir()){
-            return new CoordinateIV((a.getDegree() + b.getDegree()) / 2,
-                                    (a.getMinute() + b.getMinute()) / 2,
-                                    (a.getSecond() + b.getSecond()) / 2,
-                                    a.getCurrentDir());
+            float mid = (a.getFloatSigned() + b.getFloatSigned()) / 2;
+            int degree = (int) mid;
+            mid -= degree;
+            mid *= 60;
+            int min = (int) mid;
+            mid -= min;
+            mid *= 60;
+            return new CoordinateIV(degree, min, (int) mid, a.getCurrentDir());
         }
         else {
             return null;

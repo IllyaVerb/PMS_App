@@ -9,7 +9,7 @@ import java.util.Random;
 
 public class MainLab1_2 {
     public static void main(String[] args) {
-        first_part();
+        second_part();
     }
 
     @SuppressLint("DefaultLocale")
@@ -237,9 +237,9 @@ public class MainLab1_2 {
 
         {
             try {
-                b = new CoordinateIV(60, 23, 14, Direction.LATITUDE);
-                c = new CoordinateIV(-2, 12, 50, Direction.LATITUDE);
-                d = new CoordinateIV(150, 55, 28, Direction.LONGITUDE);
+                b = new CoordinateIV(90, 30, 40, Direction.LATITUDE);
+                c = new CoordinateIV(-90, 30, 40, Direction.LATITUDE);
+                d = new CoordinateIV(180, 55, 28, Direction.LONGITUDE);
                 System.out.println();
 
                 System.out.println("A: " + a.getIntCoordinate());

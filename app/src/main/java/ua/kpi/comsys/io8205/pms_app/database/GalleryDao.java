@@ -17,6 +17,9 @@ public interface GalleryDao {
     @Query("SELECT imageUrl FROM GalleryEntity")
     List<String> getAllUrls();
 
+    @Query("SELECT id FROM GalleryEntity")
+    List<Long> getAllIds();
+
     @Query("SELECT * FROM GalleryEntity WHERE id = :id")
     GalleryEntity getById(long id);
 
@@ -25,6 +28,9 @@ public interface GalleryDao {
 
     @Query("UPDATE GalleryEntity SET imageData = :data WHERE imageUrl = :url")
     void setImageBitmapByUrl(String url, byte[] data);
+
+    @Query("UPDATE GalleryEntity SET imageData = :data WHERE id = :id")
+    void setImageBitmapById(long id, byte[] data);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insert(GalleryEntity galleryEntity);

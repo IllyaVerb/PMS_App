@@ -1,5 +1,6 @@
 package ua.kpi.comsys.io8205.pms_app.database;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -7,7 +8,10 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import com.bumptech.glide.Glide;
+
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.ExecutionException;
 
 @Entity
 public class GalleryEntity {
@@ -23,8 +27,8 @@ public class GalleryEntity {
         this.imageData = imageData;
     }
 
-    public Bitmap getBitmapImage() {
-        return BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+    public Bitmap getBitmapImage(Context context) throws ExecutionException, InterruptedException {
+        return Glide.with(context).asBitmap().load(imageData).submit().get();
     }
 
     public static byte[] getBitmapAsByteArray(Bitmap bitmap) {

@@ -2,14 +2,17 @@ package ua.kpi.comsys.io8205.pms_app.ui.books;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Rect;
 import android.os.Build;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 
 import androidx.annotation.RequiresApi;
+import androidx.cardview.widget.CardView;
 
 import ua.kpi.comsys.io8205.pms_app.R;
 
@@ -29,6 +32,7 @@ public class BookAddView {
         boolean focusable = true;
 
         final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+
         popupWindow.setAnimationStyle(R.style.popup_window_animation);
         popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
 
@@ -37,32 +41,29 @@ public class BookAddView {
             return true;
         });
 
-        /*EditText inputTitle = popupView.findViewById(R.id.input_title);
-        EditText inputSubtitle = popupView.findViewById(R.id.input_subtitle);
-        EditText inputPrice = popupView.findViewById(R.id.input_price);
+        popupView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            Rect r = new Rect();
 
-        Button buttonAdd = popupView.findViewById(R.id.button_add_add);
-        buttonAdd.setOnClickListener(v -> {
-            if (inputTitle.getText().toString().length() != 0 &&
-                inputSubtitle.getText().toString().length() != 0 &&
-                inputPrice.getText().toString().length() != 0) {
-                int[] attrs = new int[]{R.attr.selectableItemBackground};
-                TypedArray typedArray = booksFragment.obtainStyledAttributes(attrs);
-                int backgroundResource = typedArray.getResourceId(0, 0);
+            popupView.getWindowVisibleDisplayFrame(r);
 
-                new BooksFragment().addNewBook(root, bookList, booksMap,
-                                                new Book(inputTitle.getText().toString(),
-                                                        inputSubtitle.getText().toString(),
-                                                        inputPrice.getText().toString()),
-                                                backgroundResource);
-                popupWindow.dismiss();
+            int heightDiff = popupView.getRootView().getHeight() - (r.bottom - r.top);
+            focusChange(popupView, heightDiff > 100);
+            if (heightDiff > 100) {
             }
-            else{
-                Toast.makeText(booksFragment, "You must fill all fields!",
-                        Toast.LENGTH_LONG).show();
-            }
-        });*/
+        });
 
         return new Object[] {popupView, popupWindow};
+    }
+
+    private void focusChange(View popupView, boolean hasFocus){
+        CardView parent = popupView.findViewById(R.id.card_add);
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)parent.getLayoutParams();
+
+        if (hasFocus)
+            params.height = FrameLayout.LayoutParams.MATCH_PARENT;
+        else
+            params.height = FrameLayout.LayoutParams.WRAP_CONTENT;
+
+        parent.setLayoutParams(params);
     }
 }
